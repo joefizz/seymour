@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Quick access to your Seymour feed reader — see unread articles and jump to them instantly.",
   "permissions": ["storage", "alarms"],
-  "host_permissions": ["http://*/api/*", "https://*/api/*"],
+  "host_permissions": ["http://*/*", "https://*/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
