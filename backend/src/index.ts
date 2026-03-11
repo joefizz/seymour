@@ -16,7 +16,9 @@ import "./db/connection.js";
 const app = express();
 
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 app.use(express.json());
 
 // Public routes

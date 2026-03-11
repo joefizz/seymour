@@ -11,6 +11,7 @@ A self-hosted feed reader that supports RSS, Atom, JSON Feed, and web page monit
 - **Mobile-friendly web UI** — Responsive design with collapsible sidebar, touch-friendly controls
 - **Automatic polling** — Background scheduler checks feeds on configurable intervals
 - **Lazy content extraction** — Full article content is only fetched and parsed when you actually open an article, keeping polling lightweight
+- **Chrome extension** — Badge shows unread count, popup lists unread articles, click to open in the web app
 - **Self-hosted** — Your data stays on your server. SQLite database, no external dependencies
 
 ## Architecture
@@ -47,7 +48,7 @@ A self-hosted feed reader that supports RSS, Atom, JSON Feed, and web page monit
 | Table | Purpose |
 |-------|---------|
 | `users` | User accounts (email, password hash) |
-| `feeds` | Per-user feed subscriptions (URL, type, polling interval) |
+| `feeds` | Per-user feed subscriptions (URL, type, polling interval, content mode) |
 | `articles` | Feed articles, deduplicated by `(feedId, guid)` |
 | `user_articles` | Per-user read/saved state for each article |
 | `page_monitor_config` | CSS selector and content hash for page monitors |
@@ -57,13 +58,24 @@ A self-hosted feed reader that supports RSS, Atom, JSON Feed, and web page monit
 | File | Purpose |
 |------|---------|
 | `src/pages/LoginPage.tsx` | Login/register with configurable backend URL |
-| `src/pages/FeedPage.tsx` | Main view — sidebar with feeds, article list with filters |
-| `src/pages/ArticlePage.tsx` | Clean reader view with save and original link |
+| `src/pages/FeedPage.tsx` | Main view — sidebar, article list, and split reader pane |
+| `src/pages/ArticlePage.tsx` | Standalone article view (fallback route) |
 | `src/pages/SettingsPage.tsx` | Backend URL config, sign out |
-| `src/components/Sidebar.tsx` | Feed list with unread counts, refresh/delete actions |
-| `src/components/ArticleCard.tsx` | Article preview card with time-ago and save button |
+| `src/components/Sidebar.tsx` | Feed list with unread counts, inline edit (URL, title, reader mode), refresh/delete |
+| `src/components/ArticleCard.tsx` | Article preview card with time-ago, save button, and active highlight |
 | `src/components/AddFeedModal.tsx` | Add RSS/Atom/JSON feeds or page monitors |
+| `src/components/ReaderPane.tsx` | Split reader pane — renders extracted content, summary, or iframe depending on feed mode |
 | `src/lib/api.ts` | API client with JWT token management |
+
+### Chrome Extension (`extension/`)
+
+| File | Purpose |
+|------|---------|
+| `manifest.json` | Manifest V3 config — permissions, icons, popup, options page, service worker |
+| `background.js` | Service worker — polls unread count every 2 min, updates badge, caches articles |
+| `popup.html` / `popup.js` | Popup — lists unread articles (oldest first), click to open in web app |
+| `options.html` / `options.js` | Settings — backend URL, web app URL, email/password login, disconnect |
+| `icons/` | PNG icons at 16/48/128px |
 
 ## Quick Start
 
@@ -101,6 +113,16 @@ npm install
 npm run dev             # Starts on http://localhost:5173
 ```
 
+### Chrome Extension
+
+1. Open `chrome://extensions` and enable **Developer mode**
+2. Click **Load unpacked** and select the `extension/` folder
+3. Click the Seymour extension icon, then the gear icon to open settings
+4. Enter your **Backend API URL** (e.g. `http://localhost:3001`) and **Web App URL** (e.g. `http://localhost:8080`)
+5. Log in with your email and password
+
+The extension badge will show your unread count and update every 2 minutes. Click the icon to see unread articles and jump to any article in the web app.
+
 ## Configuration
 
 ### Environment Variables
@@ -137,6 +159,8 @@ All endpoints except auth require a `Authorization: Bearer <token>` header.
 |--------|----------|------|-------------|
 | GET | `/api/feeds` | — | List all feeds with unread counts |
 | POST | `/api/feeds` | `{ url }` | Add a feed (auto-detects type) |
+| POST | `/api/feeds/bulk` | `{ urls: string[] }` | Add multiple feeds (1–100), returns per-URL results |
+| PATCH | `/api/feeds/:id` | `{ url?, title?, contentMode? }` | Update feed URL, title, or reader mode |
 | DELETE | `/api/feeds/:id` | — | Remove a feed and its articles |
 | POST | `/api/feeds/:id/refresh` | — | Manually refresh a feed |
 
@@ -184,10 +208,30 @@ For sites without feeds:
 
 ### Reading Articles
 
-- Click any article to open the clean reader view
+- Click any article to open it in the **reader pane** (split view alongside the article list)
 - Articles are automatically marked as read when opened
-- Click **Original** to visit the source page
+- **Drag the divider** between the article list and reader pane to resize
+- **Toggle layout** — click the layout icon in the reader toolbar to switch between right split and bottom split (preference is remembered)
+- Click **Original** to visit the source page in a new tab
 - Click the bookmark icon to save articles for later
+- Click **X** to close the reader pane and return to the full article list
+
+### Reader Modes (per feed)
+
+Each feed can be configured with a reader mode via the edit button in the sidebar:
+
+| Mode | Description |
+|------|-------------|
+| **Full article (extracted)** | Default. Fetches the original page and extracts clean article content using Mozilla Readability. Works for most sites. |
+| **Full page (iframe)** | Loads the original webpage directly in an iframe. Useful for sites that block content extraction. Some sites may block iframe embedding. |
+| **Summary only** | Shows only the summary/excerpt from the feed. No external requests are made when opening articles. |
+
+### Editing Feeds
+
+Hover over a feed in the sidebar and click the pencil icon to:
+- Change the feed **title**
+- Change the feed **URL**
+- Set the **reader mode** (extracted, iframe, or summary)
 
 ### Filtering
 
