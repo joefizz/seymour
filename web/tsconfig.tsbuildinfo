@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/components/addfeedmodal.tsx","./src/components/articlecard.tsx","./src/components/readerpane.tsx","./src/components/sidebar.tsx","./src/lib/api.ts","./src/pages/articlepage.tsx","./src/pages/feedpage.tsx","./src/pages/loginpage.tsx","./src/pages/settingspage.tsx"],"version":"5.9.3"}

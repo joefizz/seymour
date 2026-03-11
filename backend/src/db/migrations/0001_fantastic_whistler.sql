@@ -1,0 +1,1 @@
+ALTER TABLE `feeds` ADD `content_mode` text DEFAULT 'extract' NOT NULL;

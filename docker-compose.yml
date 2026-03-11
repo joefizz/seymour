@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3000"
+    volumes:
+      - seymour-data:/data
+    env_file:
+      - .env
+    environment:
+      - DATABASE_PATH=/data/seymour.db
+      - PORT=3000
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  seymour-data:
