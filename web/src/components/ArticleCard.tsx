@@ -22,7 +22,7 @@ export function ArticleCard({ article, active, onClick, onToggleSaved }: Article
   return (
     <div
       className={`px-4 py-3 cursor-pointer flex gap-3 ${
-        active ? "bg-blue-50 border-l-2 border-l-blue-600" : "hover:bg-gray-50"
+        active ? "bg-blue-50 border-l-2 border-l-blue-600 dark:bg-blue-900/20" : "hover:bg-gray-50 dark:hover:bg-gray-800"
       } ${article.read && !active ? "opacity-60" : ""}`}
       onClick={onClick}
     >
@@ -31,18 +31,18 @@ export function ArticleCard({ article, active, onClick, onToggleSaved }: Article
           {!article.read && (
             <span className="w-2 h-2 bg-blue-600 rounded-full shrink-0" />
           )}
-          <span className="text-xs text-gray-500 truncate">
+          <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
             {article.feedTitle}
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 dark:text-gray-400">
             {timeAgo(article.publishedAt)}
           </span>
         </div>
-        <h3 className="text-sm font-medium leading-snug line-clamp-2">
+        <h3 className="text-sm font-medium leading-snug line-clamp-2 dark:text-gray-100">
           {article.title}
         </h3>
         {article.summary && (
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {article.summary}
           </p>
         )}
@@ -53,7 +53,7 @@ export function ArticleCard({ article, active, onClick, onToggleSaved }: Article
           onToggleSaved();
         }}
         className={`shrink-0 self-start p-1 ${
-          article.saved ? "text-yellow-500" : "text-gray-300 hover:text-gray-400"
+          article.saved ? "text-yellow-500" : "text-gray-300 hover:text-gray-400 dark:text-gray-500"
         }`}
         aria-label={article.saved ? "Unsave" : "Save"}
       >

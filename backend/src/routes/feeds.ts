@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { validate } from "../middleware/validate.js";
 import * as feedService from "../services/feedService.js";
+import { exportOpml, parseOpml } from "../services/opmlService.js";
 import type { AuthRequest } from "../types/index.js";
 
 const router = Router();
@@ -52,6 +53,38 @@ router.post("/bulk", validate(bulkAddFeedsSchema), async (req, res) => {
   }));
 
   res.status(201).json({ results: feeds });
+});
+
+router.get("/opml", async (req, res, next) => {
+  try {
+    const userId = (req as AuthRequest).userId!;
+    const opml = exportOpml(userId);
+    res.set("Content-Type", "application/xml");
+    res.set("Content-Disposition", "attachment; filename=seymour-feeds.opml");
+    res.send(opml);
+  } catch (err) { next(err); }
+});
+
+router.post("/opml", async (req, res, next) => {
+  try {
+    const userId = (req as AuthRequest).userId!;
+    const { opml } = req.body as { opml: string };
+    if (!opml) return res.status(400).json({ error: "Missing opml field" });
+
+    const urls = parseOpml(opml);
+    if (urls.length === 0) return res.status(400).json({ error: "No feeds found in OPML" });
+
+    const results = [];
+    for (const url of urls) {
+      try {
+        const feed = await feedService.addFeed(userId, url);
+        results.push({ url, success: true, feed });
+      } catch (err: any) {
+        results.push({ url, success: false, error: err.message });
+      }
+    }
+    res.json({ imported: results.filter(r => r.success).length, total: urls.length, results });
+  } catch (err) { next(err); }
 });
 
 router.patch("/:id", validate(updateFeedSchema), (req, res) => {

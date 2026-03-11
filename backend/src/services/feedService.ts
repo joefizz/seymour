@@ -112,37 +112,53 @@ export async function refreshFeed(feedId: number) {
   const feed = db.select().from(feeds).where(eq(feeds.id, feedId)).get();
   if (!feed) throw new Error("Feed not found");
 
-  const parsed = await parseFeed(feed.url);
-  let newCount = 0;
+  try {
+    const parsed = await parseFeed(feed.url);
+    let newCount = 0;
 
-  for (const article of parsed.articles) {
-    const result = db
-      .insert(articles)
-      .values({
-        feedId: feed.id,
-        guid: article.guid,
-        title: article.title,
-        summary: article.summary,
-        content: article.content,
-        url: article.url,
-        author: article.author,
-        publishedAt: article.publishedAt,
+    for (const article of parsed.articles) {
+      const result = db
+        .insert(articles)
+        .values({
+          feedId: feed.id,
+          guid: article.guid,
+          title: article.title,
+          summary: article.summary,
+          content: article.content,
+          url: article.url,
+          author: article.author,
+          publishedAt: article.publishedAt,
+        })
+        .onConflictDoNothing()
+        .run();
+
+      if (result.changes > 0) newCount++;
+    }
+
+    // Update title if it changed
+    if (parsed.title && parsed.title !== feed.title) {
+      db.update(feeds).set({ title: parsed.title }).where(eq(feeds.id, feedId)).run();
+    }
+
+    db.update(feeds)
+      .set({
+        lastFetched: new Date(),
+        lastError: null,
+        lastSuccessAt: new Date().toISOString(),
+        consecutiveFailures: 0,
       })
-      .onConflictDoNothing()
+      .where(eq(feeds.id, feedId))
       .run();
 
-    if (result.changes > 0) newCount++;
+    return { newArticles: newCount };
+  } catch (error: any) {
+    db.update(feeds)
+      .set({
+        lastError: error.message,
+        consecutiveFailures: (feed.consecutiveFailures ?? 0) + 1,
+      })
+      .where(eq(feeds.id, feedId))
+      .run();
+    throw error;
   }
-
-  // Update title if it changed
-  if (parsed.title && parsed.title !== feed.title) {
-    db.update(feeds).set({ title: parsed.title }).where(eq(feeds.id, feedId)).run();
-  }
-
-  db.update(feeds)
-    .set({ lastFetched: new Date() })
-    .where(eq(feeds.id, feedId))
-    .run();
-
-  return { newArticles: newCount };
 }

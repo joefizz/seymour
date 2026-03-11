@@ -61,7 +61,7 @@ export function Sidebar({
 
       <aside
         className={`
-          fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white border-r
+          fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white dark:bg-gray-800 border-r dark:border-gray-700
           transform transition-transform lg:transform-none
           ${show ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           flex flex-col overflow-hidden
@@ -71,8 +71,8 @@ export function Sidebar({
           {/* All articles */}
           <button
             onClick={() => onSelectFeed(undefined)}
-            className={`w-full px-4 py-2 text-left text-sm flex justify-between items-center hover:bg-gray-50 ${
-              selectedFeedId === undefined ? "bg-blue-50 text-blue-600 font-medium" : ""
+            className={`w-full px-4 py-2 text-left text-sm flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700 ${
+              selectedFeedId === undefined ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium" : ""
             }`}
           >
             <span>All articles</span>
@@ -84,7 +84,7 @@ export function Sidebar({
           </button>
 
           <div className="mt-2 px-4 py-1">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Feeds
             </span>
           </div>
@@ -92,15 +92,23 @@ export function Sidebar({
           {feeds.map((feed) => (
             <div key={feed.id}>
               <div
-                className={`group px-4 py-2 text-sm flex items-center hover:bg-gray-50 cursor-pointer ${
-                  selectedFeedId === feed.id ? "bg-blue-50 text-blue-600 font-medium" : ""
+                className={`group px-4 py-2 text-sm flex items-center hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${
+                  selectedFeedId === feed.id ? "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium" : ""
                 }`}
                 onClick={() => onSelectFeed(feed.id)}
               >
+                {feed.consecutiveFailures > 0 && (
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full mr-1.5 shrink-0 ${
+                      feed.consecutiveFailures >= 3 ? "bg-red-500" : "bg-yellow-500"
+                    }`}
+                    title={feed.lastError || "Feed fetch failed"}
+                  />
+                )}
                 <span className="flex-1 truncate">{feed.title || feed.url}</span>
                 <div className="flex items-center gap-1">
                   {(feed.unreadCount || 0) > 0 && (
-                    <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">
+                    <span className="text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full">
                       {feed.unreadCount}
                     </span>
                   )}
@@ -145,28 +153,28 @@ export function Sidebar({
 
               {/* Inline edit form */}
               {editingFeedId === feed.id && (
-                <div className="px-4 py-2 bg-gray-50 border-y" onClick={(e) => e.stopPropagation()}>
-                  <label className="block text-xs text-gray-500 mb-1">Title</label>
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-y dark:border-gray-600" onClick={(e) => e.stopPropagation()}>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Title</label>
                   <input
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-2 py-1 text-sm border rounded mb-2"
+                    className="w-full px-2 py-1 text-sm border rounded mb-2 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
                     placeholder="Feed title"
                   />
-                  <label className="block text-xs text-gray-500 mb-1">URL</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">URL</label>
                   <input
                     type="url"
                     value={editUrl}
                     onChange={(e) => setEditUrl(e.target.value)}
-                    className="w-full px-2 py-1 text-sm border rounded mb-2 font-mono text-xs"
+                    className="w-full px-2 py-1 text-sm border rounded mb-2 font-mono text-xs dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
                     placeholder="https://..."
                   />
-                  <label className="block text-xs text-gray-500 mb-1">Reader mode</label>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Reader mode</label>
                   <select
                     value={editContentMode}
                     onChange={(e) => setEditContentMode(e.target.value)}
-                    className="w-full px-2 py-1 text-sm border rounded mb-2"
+                    className="w-full px-2 py-1 text-sm border rounded mb-2 dark:bg-gray-600 dark:border-gray-500 dark:text-gray-100"
                   >
                     <option value="extract">Full article (extracted)</option>
                     <option value="webpage">Full page (iframe)</option>
@@ -182,7 +190,7 @@ export function Sidebar({
                     </button>
                     <button
                       onClick={() => setEditingFeedId(null)}
-                      className="px-2 py-1 text-xs text-gray-600 border rounded hover:bg-gray-100"
+                      className="px-2 py-1 text-xs text-gray-600 dark:text-gray-300 border dark:border-gray-500 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Cancel
                     </button>
@@ -193,7 +201,7 @@ export function Sidebar({
           ))}
 
           {feeds.length === 0 && (
-            <p className="px-4 py-4 text-sm text-gray-400 text-center">
+            <p className="px-4 py-4 text-sm text-gray-400 dark:text-gray-500 text-center">
               No feeds yet
             </p>
           )}

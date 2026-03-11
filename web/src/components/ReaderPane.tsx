@@ -34,13 +34,13 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
   }, [articleId]);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 border-b shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b dark:border-gray-700 shrink-0">
         <div className="flex items-center gap-1">
           <button
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-gray-700 rounded"
+            className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded"
             aria-label="Close reader"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,7 +49,7 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
           </button>
           <button
             onClick={onToggleLayout}
-            className="p-1 text-gray-500 hover:text-gray-700 rounded"
+            className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded"
             aria-label={layout === "right" ? "Move pane to bottom" : "Move pane to right"}
             title={layout === "right" ? "Split bottom" : "Split right"}
           >
@@ -71,7 +71,7 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
                 const result = await api.toggleSaved(article.id);
                 setArticle({ ...article, saved: result.saved });
               }}
-              className={`p-1 rounded ${article.saved ? "text-yellow-500" : "text-gray-400 hover:text-gray-600"}`}
+              className={`p-1 rounded ${article.saved ? "text-yellow-500" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`}
               aria-label={article.saved ? "Unsave" : "Save"}
             >
               <svg className="w-5 h-5" fill={article.saved ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
                 href={article.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-2 py-1 text-xs border rounded text-gray-600 hover:bg-gray-50"
+                className="px-2 py-1 text-xs border rounded text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
               >
                 Original
               </a>
@@ -94,7 +94,7 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
 
       {/* Content */}
       {loading && (
-        <div className="flex-1 flex items-center justify-center text-gray-400">Loading article...</div>
+        <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500">Loading article...</div>
       )}
       {error && (
         <div className="flex-1 flex items-center justify-center text-red-600">{error}</div>
@@ -110,8 +110,8 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
         <div className="flex-1 overflow-y-auto">
           <div className="px-6 py-4 max-w-2xl mx-auto">
             <div className="mb-4">
-              <h1 className="text-xl font-bold mb-1">{article.title}</h1>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+              <h1 className="text-xl font-bold mb-1 dark:text-gray-100">{article.title}</h1>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 {article.feedTitle && <span>{article.feedTitle}</span>}
                 {article.author && (
                   <>
@@ -134,9 +134,9 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
 
             {article.contentMode === "summary" ? (
               article.summary ? (
-                <p className="text-gray-700 leading-relaxed">{article.summary}</p>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{article.summary}</p>
               ) : (
-                <p className="text-gray-400 italic">No summary available.</p>
+                <p className="text-gray-400 dark:text-gray-500 italic">No summary available.</p>
               )
             ) : article.content ? (
               <div
@@ -144,9 +144,9 @@ export function ReaderPane({ articleId, layout, onToggleLayout, onClose }: Reade
                 dangerouslySetInnerHTML={{ __html: article.content }}
               />
             ) : article.summary ? (
-              <p className="text-gray-700 leading-relaxed">{article.summary}</p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{article.summary}</p>
             ) : (
-              <p className="text-gray-400 italic">
+              <p className="text-gray-400 dark:text-gray-500 italic">
                 No content available.{" "}
                 {article.url && (
                   <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">

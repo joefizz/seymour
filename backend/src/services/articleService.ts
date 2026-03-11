@@ -1,4 +1,4 @@
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, sql, inArray, like, or } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { articles, userArticles, feeds } from "../db/schema.js";
 import { fetchAndExtract } from "./contentExtractor.js";
@@ -9,10 +9,11 @@ interface GetArticlesOptions {
   savedOnly?: boolean;
   page?: number;
   limit?: number;
+  sort?: "newest" | "oldest";
 }
 
 export function getArticles(userId: number, options: GetArticlesOptions = {}) {
-  const { feedId, unreadOnly, savedOnly, page = 1, limit = 30 } = options;
+  const { feedId, unreadOnly, savedOnly, page = 1, limit = 30, sort = "newest" } = options;
   const offset = (page - 1) * limit;
 
   // Build conditions
@@ -61,7 +62,10 @@ export function getArticles(userId: number, options: GetArticlesOptions = {}) {
       )
     )
     .where(and(...conditions))
-    .orderBy(desc(articles.publishedAt), desc(articles.createdAt))
+    .orderBy(
+      sort === "oldest" ? asc(articles.publishedAt) : desc(articles.publishedAt),
+      sort === "oldest" ? asc(articles.createdAt) : desc(articles.createdAt)
+    )
     .limit(limit)
     .offset(offset)
     .all();
@@ -242,5 +246,67 @@ export function getUnreadCount(userId: number) {
 
   return {
     count: (totalResult?.count || 0) - (readResult?.count || 0),
+  };
+}
+
+export function searchArticles(userId: number, query: string, page = 1, limit = 30) {
+  const offset = (page - 1) * limit;
+  const pattern = `%${query}%`;
+
+  const results = db
+    .select({
+      id: articles.id,
+      feedId: articles.feedId,
+      title: articles.title,
+      summary: articles.summary,
+      url: articles.url,
+      author: articles.author,
+      publishedAt: articles.publishedAt,
+      feedTitle: feeds.title,
+      read: userArticles.read,
+      saved: userArticles.saved,
+    })
+    .from(articles)
+    .innerJoin(feeds, eq(articles.feedId, feeds.id))
+    .leftJoin(
+      userArticles,
+      and(eq(userArticles.articleId, articles.id), eq(userArticles.userId, userId))
+    )
+    .where(
+      and(
+        eq(feeds.userId, userId),
+        or(
+          like(articles.title, pattern),
+          like(articles.summary, pattern),
+          like(articles.content, pattern)
+        )
+      )
+    )
+    .orderBy(desc(articles.publishedAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  const countResult = db
+    .select({ count: sql<number>`count(*)` })
+    .from(articles)
+    .innerJoin(feeds, eq(articles.feedId, feeds.id))
+    .where(
+      and(
+        eq(feeds.userId, userId),
+        or(
+          like(articles.title, pattern),
+          like(articles.summary, pattern),
+          like(articles.content, pattern)
+        )
+      )
+    )
+    .all();
+
+  return {
+    articles: results.map(a => ({ ...a, read: !!a.read, saved: !!a.saved })),
+    total: countResult[0]?.count || 0,
+    page,
+    limit,
   };
 }

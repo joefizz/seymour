@@ -8,6 +8,15 @@
   }
 }
 
+/* Dark mode base */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  @apply bg-gray-900 text-gray-100;
+}
+
 .article-content {
   max-width: none;
   font-size: 0.9375rem;
@@ -21,6 +30,9 @@
 .article-content a {
   color: #2563eb;
   text-decoration: underline;
+}
+.dark .article-content a {
+  @apply text-blue-400;
 }
 .article-content h1, .article-content h2, .article-content h3 {
   font-weight: 600;
@@ -36,6 +48,9 @@
   font-style: italic;
   margin: 0.75rem 0;
 }
+.dark .article-content blockquote {
+  @apply border-gray-600 text-gray-300;
+}
 .article-content pre {
   background: #f3f4f6;
   padding: 0.75rem;
@@ -49,6 +64,9 @@
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
+}
+.dark .article-content pre, .dark .article-content code {
+  @apply bg-gray-800 text-gray-200;
 }
 .article-content ul, .article-content ol {
   padding-left: 1.25rem;

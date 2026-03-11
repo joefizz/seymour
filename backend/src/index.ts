@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.js";
 import feedRoutes from "./routes/feeds.js";
 import articleRoutes from "./routes/articles.js";
 import pageMonitorRoutes from "./routes/pageMonitor.js";
+import settingsRoutes from "./routes/settings.js";
 import { startScheduler } from "./services/scheduler.js";
 
 // Ensure database tables exist
@@ -34,6 +35,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/feeds", authMiddleware, feedRoutes);
 app.use("/api/articles", authMiddleware, articleRoutes);
 app.use("/api/page-monitors", authMiddleware, pageMonitorRoutes);
+app.use("/api/settings", authMiddleware, settingsRoutes);
 
 // Health check
 app.get("/api/health", (_req, res) => {

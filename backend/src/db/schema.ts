@@ -26,6 +26,9 @@ export const feeds = sqliteTable("feeds", {
   siteUrl: text("site_url"),
   lastFetched: integer("last_fetched", { mode: "timestamp" }),
   fetchInterval: integer("fetch_interval").notNull().default(3600),
+  lastError: text("last_error"),
+  lastSuccessAt: text("last_success_at"),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -70,6 +73,24 @@ export const userArticles = sqliteTable(
   (table) => [uniqueIndex("user_articles_pk").on(table.userId, table.articleId)]
 );
 
+export const settings = sqliteTable(
+  "settings",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    retentionDays: integer("retention_days").notNull().default(90),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [uniqueIndex("settings_user_id_unique").on(table.userId)]
+);
+
 export const pageMonitorConfig = sqliteTable("page_monitor_config", {
   feedId: integer("feed_id")
     .primaryKey()
@@ -80,9 +101,14 @@ export const pageMonitorConfig = sqliteTable("page_monitor_config", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const settingsRelations = relations(settings, ({ one }) => ({
+  user: one(users, { fields: [settings.userId], references: [users.id] }),
+}));
+
+export const usersRelations = relations(users, ({ many, one }) => ({
   feeds: many(feeds),
   userArticles: many(userArticles),
+  settings: one(settings),
 }));
 
 export const feedsRelations = relations(feeds, ({ one, many }) => ({

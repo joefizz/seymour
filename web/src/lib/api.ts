@@ -106,6 +106,7 @@ export const api = {
     saved?: boolean;
     page?: number;
     limit?: number;
+    sort?: "newest" | "oldest";
   } = {}) => {
     const searchParams = new URLSearchParams();
     if (params.feedId) searchParams.set("feedId", String(params.feedId));
@@ -113,6 +114,7 @@ export const api = {
     if (params.saved) searchParams.set("saved", "true");
     if (params.page) searchParams.set("page", String(params.page));
     if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.sort) searchParams.set("sort", params.sort);
     const qs = searchParams.toString();
     return request<{ articles: any[]; total: number; page: number; limit: number }>(
       `/api/articles${qs ? `?${qs}` : ""}`
@@ -146,4 +148,41 @@ export const api = {
 
   deletePageMonitor: (feedId: number) =>
     request<any>(`/api/page-monitors/${feedId}`, { method: "DELETE" }),
+
+  // Search
+  search: (q: string, page?: number, limit?: number) => {
+    const searchParams = new URLSearchParams({ q });
+    if (page) searchParams.set("page", String(page));
+    if (limit) searchParams.set("limit", String(limit));
+    return request<{ articles: any[]; total: number; page: number; limit: number }>(
+      `/api/articles/search?${searchParams.toString()}`
+    );
+  },
+
+  // Settings
+  getSettings: () =>
+    request<{ retentionDays: number }>("/api/settings"),
+
+  updateSettings: (updates: { retentionDays?: number }) =>
+    request<{ retentionDays: number }>("/api/settings", {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    }),
+
+  // OPML
+  exportOpml: async () => {
+    const url = `${getBackendUrl()}/api/feeds/opml`;
+    const token = getToken();
+    const res = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error("Export failed");
+    return res.blob();
+  },
+
+  importOpml: (opml: string) =>
+    request<{ imported: number; total: number; results: any[] }>("/api/feeds/opml", {
+      method: "POST",
+      body: JSON.stringify({ opml }),
+    }),
 };

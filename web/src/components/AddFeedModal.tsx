@@ -34,15 +34,15 @@ export function AddFeedModal({ onClose, onAdded }: AddFeedModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/30 z-40 flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl w-full max-w-md p-5 shadow-lg">
-        <h2 className="text-lg font-bold mb-4">Add Source</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-md p-5 shadow-lg">
+        <h2 className="text-lg font-bold mb-4 dark:text-gray-100">Add Source</h2>
 
         {/* Mode toggle */}
-        <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1">
+        <div className="flex gap-1 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
           <button
             onClick={() => setMode("feed")}
             className={`flex-1 py-1.5 text-sm rounded-md ${
-              mode === "feed" ? "bg-white shadow font-medium" : ""
+              mode === "feed" ? "bg-white dark:bg-gray-600 shadow font-medium dark:text-gray-100" : "dark:text-gray-300"
             }`}
           >
             RSS / Atom / JSON
@@ -50,7 +50,7 @@ export function AddFeedModal({ onClose, onAdded }: AddFeedModalProps) {
           <button
             onClick={() => setMode("monitor")}
             className={`flex-1 py-1.5 text-sm rounded-md ${
-              mode === "monitor" ? "bg-white shadow font-medium" : ""
+              mode === "monitor" ? "bg-white dark:bg-gray-600 shadow font-medium dark:text-gray-100" : "dark:text-gray-300"
             }`}
           >
             Page Monitor
@@ -59,7 +59,7 @@ export function AddFeedModal({ onClose, onAdded }: AddFeedModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">URL</label>
+            <label className="block text-sm font-medium mb-1 dark:text-gray-300">URL</label>
             <input
               type="url"
               value={url}
@@ -69,20 +69,20 @@ export function AddFeedModal({ onClose, onAdded }: AddFeedModalProps) {
                   ? "https://example.com/feed.xml"
                   : "https://example.com/news"
               }
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
               required
             />
           </div>
 
           {mode === "monitor" && (
             <div>
-              <label className="block text-sm font-medium mb-1">CSS Selector</label>
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">CSS Selector</label>
               <input
                 type="text"
                 value={cssSelector}
                 onChange={(e) => setCssSelector(e.target.value)}
                 placeholder=".article-list, #news-container"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
                 required
               />
               <p className="text-xs text-gray-400 mt-1">
@@ -91,13 +91,13 @@ export function AddFeedModal({ onClose, onAdded }: AddFeedModalProps) {
             </div>
           )}
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>}
 
           <div className="flex gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 border rounded-lg text-sm hover:bg-gray-50"
+              className="flex-1 py-2 border rounded-lg text-sm hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 dark:border-gray-600"
             >
               Cancel
             </button>
