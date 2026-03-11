@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, setToken, setBackendUrl, getBackendUrl } from "../lib/api";
+import { api, setToken } from "../lib/api";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [backendUrl, setUrl] = useState(getBackendUrl());
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +16,6 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      setBackendUrl(backendUrl);
       const result = isRegister
         ? await api.register(email, password)
         : await api.login(email, password);
@@ -39,17 +37,6 @@ export function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Server URL</label>
-            <input
-              type="url"
-              value={backendUrl}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="http://localhost:3000"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
             <input

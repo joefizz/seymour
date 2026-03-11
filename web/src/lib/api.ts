@@ -2,7 +2,7 @@ const STORAGE_KEY_URL = "seymour_backend_url";
 const STORAGE_KEY_TOKEN = "seymour_token";
 
 export function getBackendUrl(): string {
-  return localStorage.getItem(STORAGE_KEY_URL) || "http://localhost:3000";
+  return localStorage.getItem(STORAGE_KEY_URL) || "";
 }
 
 export function setBackendUrl(url: string) {

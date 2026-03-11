@@ -1,4 +1,7 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import cors from "cors";
 import helmet from "helmet";
 import { config } from "./config.js";
@@ -12,6 +15,8 @@ import { startScheduler } from "./services/scheduler.js";
 
 // Ensure database tables exist
 import "./db/connection.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
@@ -37,7 +42,17 @@ app.get("/api/health", (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
+// Serve frontend static files (if built frontend exists)
+const publicDir = path.join(__dirname, "public");
+const indexHtml = path.join(publicDir, "index.html");
+if (fs.existsSync(indexHtml)) {
+  app.use(express.static(publicDir));
+  app.get("/{*splat}", (_req, res) => {
+    res.sendFile(indexHtml);
+  });
+}
+
 app.listen(config.port, () => {
-  console.log(`Seymour backend listening on port ${config.port}`);
+  console.log(`Seymour listening on port ${config.port}`);
   startScheduler();
 });

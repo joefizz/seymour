@@ -5,7 +5,6 @@ import { isAuthenticated } from "./lib/api";
 import { LoginPage } from "./pages/LoginPage";
 import { FeedPage } from "./pages/FeedPage";
 import { ArticlePage } from "./pages/ArticlePage";
-import { SettingsPage } from "./pages/SettingsPage";
 import "./styles/index.css";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -36,15 +35,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
+<Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
   </React.StrictMode>

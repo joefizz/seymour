@@ -1,5 +1,4 @@
 const backendUrlInput = document.getElementById("backend-url");
-const webappUrlInput = document.getElementById("webapp-url");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const loginBtn = document.getElementById("login-btn");
@@ -13,24 +12,22 @@ const refreshBtn = document.getElementById("refresh-btn");
 const refreshStatus = document.getElementById("refresh-status");
 
 async function loadState() {
-  const data = await chrome.storage.local.get(["backendUrl", "webAppUrl", "token", "userEmail"]);
+  const data = await chrome.storage.local.get(["backendUrl", "token", "userEmail"]);
 
   if (data.token && data.backendUrl) {
     loginState.classList.add("hidden");
     connectedState.classList.remove("hidden");
     connectedEmail.textContent = data.userEmail || "unknown";
-    currentUrls.textContent = `API: ${data.backendUrl} | Web: ${data.webAppUrl || data.backendUrl}`;
+    currentUrls.textContent = data.backendUrl;
   } else {
     loginState.classList.remove("hidden");
     connectedState.classList.add("hidden");
     if (data.backendUrl) backendUrlInput.value = data.backendUrl;
-    if (data.webAppUrl) webappUrlInput.value = data.webAppUrl;
   }
 }
 
 loginBtn.addEventListener("click", async () => {
   const backendUrl = backendUrlInput.value.replace(/\/+$/, "");
-  const webAppUrl = webappUrlInput.value.replace(/\/+$/, "") || backendUrl;
   const email = emailInput.value.trim();
   const password = passwordInput.value;
 
@@ -50,7 +47,8 @@ loginBtn.addEventListener("click", async () => {
     });
 
     if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
+      let body = {};
+      try { body = await res.json(); } catch {}
       const detail = body.details?.map((d) => d.message).join(", ");
       throw new Error(body.error || detail || `Login failed (${res.status})`);
     }
@@ -59,7 +57,7 @@ loginBtn.addEventListener("click", async () => {
 
     await chrome.storage.local.set({
       backendUrl,
-      webAppUrl,
+      webAppUrl: backendUrl,
       token: data.token,
       userEmail: data.user?.email || email,
     });
