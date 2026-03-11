@@ -106,10 +106,21 @@ export function FeedPage() {
   }, [loadArticles]);
 
   async function handleMarkAllRead() {
-    await api.markAllRead(selectedFeedId);
-    loadArticles();
-    loadFeeds();
+    const unreadIds = displayArticles
+      .filter((a) => !a.read)
+      .map((a) => a.id);
+    if (unreadIds.length === 0) return;
+    await api.markBatchRead(unreadIds);
+    setArticles((prev) =>
+      prev.map((a) => (unreadIds.includes(a.id) ? { ...a, read: true } : a))
+    );
+    if (searchResults) {
+      setSearchResults((prev) =>
+        prev ? prev.map((a) => (unreadIds.includes(a.id) ? { ...a, read: true } : a)) : prev
+      );
+    }
     loadUnreadCount();
+    loadFeeds();
   }
 
   async function handleDeleteFeed(id: number) {

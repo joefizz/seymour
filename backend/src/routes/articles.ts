@@ -66,6 +66,16 @@ router.post("/mark-all-read", (req, res) => {
   res.json({ success: true });
 });
 
+router.post("/mark-batch-read", (req, res) => {
+  const { userId } = req as AuthRequest;
+  const { articleIds } = req.body;
+  if (!Array.isArray(articleIds) || articleIds.length === 0) {
+    return res.status(400).json({ error: "articleIds array required" });
+  }
+  articleService.markBatchRead(userId!, articleIds.map(Number));
+  res.json({ success: true });
+});
+
 router.patch("/:id/saved", (req, res) => {
   const { userId } = req as AuthRequest;
   const result = articleService.toggleSaved(userId!, parseInt(req.params.id));

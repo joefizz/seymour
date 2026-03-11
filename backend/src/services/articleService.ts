@@ -163,6 +163,18 @@ export function markRead(userId: number, articleId: number) {
     .run();
 }
 
+export function markBatchRead(userId: number, articleIds: number[]) {
+  for (const articleId of articleIds) {
+    db.insert(userArticles)
+      .values({ userId, articleId, read: true })
+      .onConflictDoUpdate({
+        target: [userArticles.userId, userArticles.articleId],
+        set: { read: true },
+      })
+      .run();
+  }
+}
+
 export function markAllRead(userId: number, feedId?: number) {
   const userFeedIds = feedId
     ? [feedId]

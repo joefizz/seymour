@@ -1,10 +1,46 @@
 const statusEl = document.getElementById("status");
 const articlesEl = document.getElementById("articles");
 const countBadge = document.getElementById("count-badge");
+const markAllBtn = document.getElementById("mark-all-btn");
 const settingsBtn = document.getElementById("settings-btn");
+
+const MAX_POPUP_ARTICLES = 20;
+let currentArticles = [];
 
 settingsBtn.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
+});
+
+markAllBtn.addEventListener("click", async () => {
+  if (currentArticles.length === 0) return;
+  markAllBtn.disabled = true;
+  markAllBtn.textContent = "Marking...";
+
+  const data = await chrome.storage.local.get(["backendUrl", "token"]);
+  if (data.backendUrl && data.token) {
+    const articleIds = currentArticles.map((a) => a.id);
+    try {
+      await fetch(`${data.backendUrl}/api/articles/mark-batch-read`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ articleIds }),
+      });
+      // Trigger a fresh poll to update badge and cache
+      chrome.runtime.sendMessage({ type: "poll" });
+      currentArticles = [];
+      articlesEl.innerHTML = "";
+      countBadge.style.display = "none";
+      markAllBtn.style.display = "none";
+      statusEl.style.display = "";
+      statusEl.textContent = "No unread articles.";
+    } catch {
+      markAllBtn.textContent = "Mark all read";
+      markAllBtn.disabled = false;
+    }
+  }
 });
 
 function timeAgo(dateStr) {
@@ -20,34 +56,39 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString();
 }
 
-async function render() {
-  const data = await chrome.storage.local.get(["backendUrl", "token", "webAppUrl", "cachedArticles", "unreadCount"]);
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
 
-  if (!data.backendUrl || !data.token) {
-    statusEl.innerHTML = 'Not connected. <a id="open-settings">Open settings</a> to log in.';
-    document.getElementById("open-settings").addEventListener("click", () => {
-      chrome.runtime.openOptionsPage();
-    });
-    return;
-  }
+function renderArticles(articles, count, webAppUrl) {
+  articlesEl.innerHTML = "";
+  statusEl.style.display = "";
+  statusEl.textContent = "";
+  countBadge.style.display = "none";
+  markAllBtn.style.display = "none";
 
-  const articles = data.cachedArticles || [];
-  const count = data.unreadCount || 0;
-  const webAppUrl = (data.webAppUrl || data.backendUrl).replace(/\/+$/, "");
+  // Limit to max popup articles
+  const visible = articles.slice(0, MAX_POPUP_ARTICLES);
+  currentArticles = visible;
 
   if (count > 0) {
     countBadge.textContent = count > 999 ? "999+" : count;
     countBadge.style.display = "";
   }
 
-  if (articles.length === 0) {
+  if (visible.length === 0) {
     statusEl.textContent = "No unread articles.";
     return;
   }
 
   statusEl.style.display = "none";
+  markAllBtn.style.display = "";
+  markAllBtn.disabled = false;
+  markAllBtn.textContent = "Mark all read";
 
-  articles.forEach((article) => {
+  visible.forEach((article) => {
     const a = document.createElement("a");
     a.className = "article";
     a.href = `${webAppUrl}/#/article/${article.id}`;
@@ -65,8 +106,18 @@ async function render() {
       </div>
     `;
 
-    a.addEventListener("click", () => {
-      // Close popup after click
+    a.addEventListener("click", async () => {
+      // Mark as read via API
+      const data = await chrome.storage.local.get(["backendUrl", "token"]);
+      if (data.backendUrl && data.token) {
+        fetch(`${data.backendUrl}/api/articles/${article.id}/read`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${data.token}`,
+            "Content-Type": "application/json",
+          },
+        }).catch(() => {});
+      }
       setTimeout(() => window.close(), 100);
     });
 
@@ -74,23 +125,43 @@ async function render() {
   });
 }
 
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
+async function init() {
+  const data = await chrome.storage.local.get(["backendUrl", "token", "webAppUrl", "cachedArticles", "unreadCount"]);
+
+  if (!data.backendUrl || !data.token) {
+    statusEl.innerHTML = 'Not connected. <a id="open-settings">Open settings</a> to log in.';
+    document.getElementById("open-settings").addEventListener("click", () => {
+      chrome.runtime.openOptionsPage();
+    });
+    return;
+  }
+
+  const webAppUrl = (data.webAppUrl || data.backendUrl).replace(/\/+$/, "");
+
+  // Show cache immediately as a placeholder
+  const cachedArticles = data.cachedArticles || [];
+  const cachedCount = data.unreadCount || 0;
+  renderArticles(cachedArticles, cachedCount, webAppUrl);
+
+  // Then fetch fresh data and re-render
+  try {
+    const response = await chrome.runtime.sendMessage({ type: "poll" });
+    if (response && response.ok) {
+      const fresh = await chrome.storage.local.get(["cachedArticles", "unreadCount"]);
+      renderArticles(fresh.cachedArticles || [], fresh.unreadCount || 0, webAppUrl);
+    }
+  } catch {
+    // Background poll failed, cache is already shown
+  }
 }
 
-// Render immediately from cache, then trigger a fresh poll
-render();
-chrome.runtime.sendMessage({ type: "poll" });
+init();
 
-// Re-render if storage updates while popup is open
-chrome.storage.onChanged.addListener((changes) => {
+// Re-render if storage updates while popup is open (e.g. from alarm poll)
+chrome.storage.onChanged.addListener(async (changes) => {
   if (changes.cachedArticles || changes.unreadCount) {
-    articlesEl.innerHTML = "";
-    statusEl.style.display = "";
-    statusEl.textContent = "";
-    countBadge.style.display = "none";
-    render();
+    const data = await chrome.storage.local.get(["backendUrl", "webAppUrl", "cachedArticles", "unreadCount"]);
+    const webAppUrl = (data.webAppUrl || data.backendUrl || "").replace(/\/+$/, "");
+    renderArticles(data.cachedArticles || [], data.unreadCount || 0, webAppUrl);
   }
 });

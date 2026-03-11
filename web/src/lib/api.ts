@@ -133,6 +133,12 @@ export const api = {
       body: JSON.stringify({ feedId }),
     }),
 
+  markBatchRead: (articleIds: number[]) =>
+    request<any>("/api/articles/mark-batch-read", {
+      method: "POST",
+      body: JSON.stringify({ articleIds }),
+    }),
+
   toggleSaved: (id: number) =>
     request<any>(`/api/articles/${id}/saved`, { method: "PATCH" }),
 
