@@ -144,6 +144,7 @@ export function FeedPage() {
     );
     setSelectedArticleId(article.id);
     loadUnreadCount();
+    loadFeeds();
   }
 
   // Search handlers
