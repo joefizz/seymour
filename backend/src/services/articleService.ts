@@ -36,6 +36,16 @@ export function getArticles(userId: number, options: GetArticlesOptions = {}) {
 
   conditions.push(inArray(articles.feedId, userFeedIds));
 
+  // Apply read/saved filters in SQL so pagination works correctly
+  if (unreadOnly) {
+    conditions.push(
+      or(eq(userArticles.read, false), sql`${userArticles.read} IS NULL`)
+    );
+  }
+  if (savedOnly) {
+    conditions.push(eq(userArticles.saved, true));
+  }
+
   const query = db
     .select({
       id: articles.id,
@@ -70,23 +80,22 @@ export function getArticles(userId: number, options: GetArticlesOptions = {}) {
     .offset(offset)
     .all();
 
-  // Apply read/saved filters in JS since they depend on left join
-  let filtered = query;
-  if (unreadOnly) {
-    filtered = filtered.filter((a) => !a.read);
-  }
-  if (savedOnly) {
-    filtered = filtered.filter((a) => a.saved);
-  }
-
   const totalResult = db
     .select({ count: sql<number>`count(*)` })
     .from(articles)
+    .innerJoin(feeds, eq(articles.feedId, feeds.id))
+    .leftJoin(
+      userArticles,
+      and(
+        eq(userArticles.articleId, articles.id),
+        eq(userArticles.userId, userId)
+      )
+    )
     .where(and(...conditions))
     .get();
 
   return {
-    articles: filtered.map((a) => ({
+    articles: query.map((a) => ({
       ...a,
       read: a.read ?? false,
       saved: a.saved ?? false,
