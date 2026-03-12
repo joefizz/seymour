@@ -62,7 +62,7 @@ export function startScheduler() {
         .select()
         .from(feeds)
         .where(
-          sql`(${feeds.lastFetched} IS NULL OR (unixepoch('now') - unixepoch(${feeds.lastFetched})) > ${feeds.fetchInterval})`
+          sql`(${feeds.lastFetched} IS NULL OR (unixepoch('now') - ${feeds.lastFetched}) > ${feeds.fetchInterval})`
         )
         .all();
 
