@@ -85,6 +85,9 @@ export function FeedPage() {
       });
       setArticles(data.articles);
       setTotal(data.total);
+      // Refresh counts alongside articles so badges stay in sync
+      api.getUnreadCount().then((d) => setUnreadCount(d.count)).catch(() => {});
+      api.getFeeds().then((d) => setFeeds(d)).catch(() => {});
     } catch {}
     setLoading(false);
   }, [selectedFeedId, filter, page, sortOrder]);
@@ -104,6 +107,16 @@ export function FeedPage() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  // Poll for new articles every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadUnreadCount();
+      loadFeeds();
+      loadArticles();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [loadUnreadCount, loadFeeds, loadArticles]);
 
   async function handleMarkAllRead() {
     const unreadIds = displayArticles
@@ -279,6 +292,14 @@ export function FeedPage() {
               onToggleSaved={async () => {
                 await api.toggleSaved(article.id);
                 loadArticles();
+              }}
+              onMarkRead={async () => {
+                await api.markRead(article.id);
+                setArticles((prev) =>
+                  prev.map((a) => (a.id === article.id ? { ...a, read: true } : a))
+                );
+                loadUnreadCount();
+                loadFeeds();
               }}
             />
           ))
