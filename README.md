@@ -104,6 +104,22 @@ Access via the gear icon in the header:
 
 The badge shows your unread count (updates every 2 minutes). Click to see unread articles, mark all as read, or jump to any article in the web app.
 
+## Resetting a Password
+
+If you forget your password, reset it via the Docker container:
+
+```bash
+docker exec -it <container-name> node dist/reset-password.js <email> <new-password>
+```
+
+For example:
+
+```bash
+docker exec -it seymour-seymour-1 node dist/reset-password.js joe@example.com mynewpassword
+```
+
+Use `docker ps` to find your container name. For local development, use `npm run reset-password -- <email> <new-password>` from the `backend/` directory.
+
 ## Local Development
 
 ```bash
