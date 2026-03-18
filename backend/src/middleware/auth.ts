@@ -16,8 +16,9 @@ export function authMiddleware(
 
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, config.jwtSecret) as { userId: number };
+    const payload = jwt.verify(token, config.jwtSecret) as { userId: number; client?: string };
     req.userId = payload.userId;
+    req.tokenClient = (payload.client as "web" | "extension") || "web";
     next();
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });

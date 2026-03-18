@@ -5,11 +5,18 @@ import { db } from "../db/connection.js";
 import { users } from "../db/schema.js";
 import { config } from "../config.js";
 
-export function generateToken(userId: number): string {
-  return jwt.sign({ userId }, config.jwtSecret, { expiresIn: "7d" });
+export type ClientType = "web" | "extension";
+
+export function generateToken(userId: number, client: ClientType = "web"): string {
+  const expiresIn = client === "extension" ? 30 * 24 * 60 * 60 : 60 * 60; // 30d or 1h in seconds
+  return jwt.sign({ userId, client }, config.jwtSecret, { expiresIn });
 }
 
-export async function register(email: string, password: string) {
+export function refreshToken(userId: number, currentClient: ClientType): string {
+  return generateToken(userId, currentClient);
+}
+
+export async function register(email: string, password: string, client: ClientType = "web") {
   const existing = db
     .select()
     .from(users)
@@ -27,10 +34,10 @@ export async function register(email: string, password: string) {
     .returning()
     .get();
 
-  return { token: generateToken(user.id), user: { id: user.id, email: user.email } };
+  return { token: generateToken(user.id, client), user: { id: user.id, email: user.email } };
 }
 
-export async function login(email: string, password: string) {
+export async function login(email: string, password: string, client: ClientType = "web") {
   const user = db
     .select()
     .from(users)
@@ -46,5 +53,5 @@ export async function login(email: string, password: string) {
     throw new Error("Invalid email or password");
   }
 
-  return { token: generateToken(user.id), user: { id: user.id, email: user.email } };
+  return { token: generateToken(user.id, client), user: { id: user.id, email: user.email } };
 }

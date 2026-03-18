@@ -25,6 +25,43 @@ export function isAuthenticated(): boolean {
   return !!getToken();
 }
 
+let refreshPromise: Promise<boolean> | null = null;
+
+async function tryRefreshToken(): Promise<boolean> {
+  // Deduplicate concurrent refresh attempts
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const token = getToken();
+    if (!token) return false;
+
+    try {
+      const url = `${getBackendUrl()}/api/auth/refresh`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      setToken(data.token);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
@@ -41,7 +78,16 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, { ...options, headers });
+  let res = await fetch(url, { ...options, headers });
+
+  // On 401, try refreshing the token and retry once
+  if (res.status === 401 && token && !path.includes("/api/auth/")) {
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      headers["Authorization"] = `Bearer ${getToken()}`;
+      res = await fetch(url, { ...options, headers });
+    }
+  }
 
   if (res.status === 401) {
     clearToken();
@@ -56,6 +102,13 @@ async function request<T>(
 
   return res.json();
 }
+
+// Proactively refresh the token every 30 minutes to avoid expiry during use
+setInterval(async () => {
+  if (getToken()) {
+    await tryRefreshToken();
+  }
+}, 30 * 60 * 1000);
 
 export const api = {
   // Auth
