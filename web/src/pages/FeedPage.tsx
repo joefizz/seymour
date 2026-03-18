@@ -72,8 +72,8 @@ export function FeedPage() {
     localStorage.setItem("seymour_sort_order", sortOrder);
   }, [sortOrder]);
 
-  const loadArticles = useCallback(async () => {
-    setLoading(true);
+  const loadArticles = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await api.getArticles({
         feedId: selectedFeedId,
@@ -89,7 +89,7 @@ export function FeedPage() {
       api.getUnreadCount().then((d) => setUnreadCount(d.count)).catch(() => {});
       api.getFeeds().then((d) => setFeeds(d)).catch(() => {});
     } catch {}
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [selectedFeedId, filter, page, sortOrder]);
 
   const loadUnreadCount = useCallback(async () => {
@@ -108,14 +108,31 @@ export function FeedPage() {
     loadArticles();
   }, [loadArticles]);
 
-  // Poll for new articles every 5 minutes
+  // Poll for new articles every 5 minutes (silent to avoid loading flash)
+  // Also refresh when the tab regains focus after being hidden for 1+ minutes
   useEffect(() => {
     const interval = setInterval(() => {
       loadUnreadCount();
       loadFeeds();
-      loadArticles();
+      loadArticles(true);
     }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+
+    let hiddenAt = 0;
+    function onVisibilityChange() {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else if (hiddenAt && Date.now() - hiddenAt > 60_000) {
+        loadUnreadCount();
+        loadFeeds();
+        loadArticles(true);
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [loadUnreadCount, loadFeeds, loadArticles]);
 
   async function handleMarkAllRead() {
@@ -124,16 +141,13 @@ export function FeedPage() {
       .map((a) => a.id);
     if (unreadIds.length === 0) return;
     await api.markBatchRead(unreadIds);
-    setArticles((prev) =>
-      prev.map((a) => (unreadIds.includes(a.id) ? { ...a, read: true } : a))
-    );
     if (searchResults) {
       setSearchResults((prev) =>
         prev ? prev.map((a) => (unreadIds.includes(a.id) ? { ...a, read: true } : a)) : prev
       );
     }
-    loadUnreadCount();
-    loadFeeds();
+    // Re-fetch articles so unread/saved views update correctly
+    loadArticles();
   }
 
   async function handleDeleteFeed(id: number) {
