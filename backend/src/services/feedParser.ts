@@ -40,10 +40,10 @@ export async function parseFeed(url: string): Promise<ParsedFeed> {
   }
 
   // Parse as RSS or Atom
-  return parseRssAtom(body, url);
+  return parseRssAtom(body);
 }
 
-async function parseRssAtom(xml: string, _url: string): Promise<ParsedFeed> {
+async function parseRssAtom(xml: string): Promise<ParsedFeed> {
   const isAtom =
     xml.includes("<feed") && xml.includes("xmlns=\"http://www.w3.org/2005/Atom\"");
   const type = isAtom ? "atom" : "rss";

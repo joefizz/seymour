@@ -124,6 +124,12 @@ export const api = {
       { method: "POST", body: JSON.stringify({ email, password }) }
     ),
 
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
   // Feeds
   getFeeds: () =>
     request<any[]>("/api/feeds"),

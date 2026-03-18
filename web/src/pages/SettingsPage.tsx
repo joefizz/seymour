@@ -9,6 +9,11 @@ export function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordResult, setPasswordResult] = useState<{ message: string; error: boolean } | null>(null);
 
   useEffect(() => {
     api.getSettings().then((s) => setRetentionDays(s.retentionDays)).catch(() => {});
@@ -121,6 +126,71 @@ export function SettingsPage() {
           {importResult && (
             <p className={`mt-2 text-sm ${importResult.startsWith("Error") ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
               {importResult}
+            </p>
+          )}
+        </section>
+
+        {/* Change Password */}
+        <section className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+          <h2 className="font-semibold mb-1 dark:text-gray-100">Change Password</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            Enter your current password and choose a new one.
+          </p>
+          <div className="space-y-3 max-w-xs">
+            <input
+              type="password"
+              placeholder="Current password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+            />
+            <input
+              type="password"
+              placeholder="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+            />
+            <input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+            />
+            <button
+              onClick={async () => {
+                if (!currentPassword || !newPassword) return;
+                if (newPassword.length < 6) {
+                  setPasswordResult({ message: "New password must be at least 6 characters", error: true });
+                  return;
+                }
+                if (newPassword !== confirmPassword) {
+                  setPasswordResult({ message: "New passwords do not match", error: true });
+                  return;
+                }
+                setChangingPassword(true);
+                setPasswordResult(null);
+                try {
+                  await api.changePassword(currentPassword, newPassword);
+                  setPasswordResult({ message: "Password changed", error: false });
+                  setCurrentPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                } catch (err: any) {
+                  setPasswordResult({ message: err.message || "Failed to change password", error: true });
+                }
+                setChangingPassword(false);
+              }}
+              disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {changingPassword ? "Changing..." : "Change Password"}
+            </button>
+          </div>
+          {passwordResult && (
+            <p className={`mt-2 text-sm ${passwordResult.error ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+              {passwordResult.message}
             </p>
           )}
         </section>

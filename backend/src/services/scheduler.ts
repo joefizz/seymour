@@ -55,8 +55,6 @@ export function startScheduler() {
   // Run every minute, check which feeds need refreshing
   cron.schedule("* * * * *", async () => {
     try {
-      const now = Math.floor(Date.now() / 1000);
-
       // Find feeds due for refresh
       const dueFeeds = db
         .select()

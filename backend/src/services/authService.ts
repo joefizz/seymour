@@ -55,3 +55,23 @@ export async function login(email: string, password: string, client: ClientType 
 
   return { token: generateToken(user.id, client), user: { id: user.id, email: user.email } };
 }
+
+export async function changePassword(userId: number, currentPassword: string, newPassword: string) {
+  const user = db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .get();
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new Error("Current password is incorrect");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  db.update(users).set({ passwordHash }).where(eq(users.id, userId)).run();
+}
