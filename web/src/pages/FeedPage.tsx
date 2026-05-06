@@ -164,14 +164,20 @@ export function FeedPage() {
     loadUnreadCount();
   }
 
-  function handleArticleClick(article: any) {
-    api.markRead(article.id);
+  function markCurrentArticleRead(articleId: number) {
+    api.markRead(articleId);
     setArticles((prev) =>
-      prev.map((a) => (a.id === article.id ? { ...a, read: true } : a))
+      prev.map((a) => (a.id === articleId ? { ...a, read: true } : a))
     );
-    setSelectedArticleId(article.id);
     loadUnreadCount();
     loadFeeds();
+  }
+
+  function handleArticleClick(article: any) {
+    if (selectedArticleId !== null && selectedArticleId !== article.id) {
+      markCurrentArticleRead(selectedArticleId);
+    }
+    setSelectedArticleId(article.id);
   }
 
   // Search handlers
@@ -494,7 +500,10 @@ export function FeedPage() {
                 onToggleLayout={() =>
                   setReaderLayout((l) => (l === "right" ? "bottom" : "right"))
                 }
-                onClose={() => setSelectedArticleId(null)}
+                onClose={() => {
+                  if (selectedArticleId !== null) markCurrentArticleRead(selectedArticleId);
+                  setSelectedArticleId(null);
+                }}
               />
             </div>
           </div>
